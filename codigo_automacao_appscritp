@@ -1,0 +1,68 @@
+function verificarEEnviarAlertas() {
+  // 1. Abre a planilha ativa e pega os dados da "Página1" (ou o nome da sua aba principal)
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Página1"); // ajuste o nome se necessário
+  
+  // Pega todos os dados da tabela
+  var dataRange = sheet.getDataRange();
+  var values = dataRange.getValues();
+  
+  // Índices das colunas baseado no seu banco de dados:
+  // A=0(id), B=1(created_at), C=2(date), D=3(farm_name), E=4(plot), H=7(pred_label)
+  var COL_DATE = 2;
+  var COL_FARM = 3;
+  var COL_PLOT = 4;
+  var COL_LABEL = 7;
+  
+  // Objeto para agrupar as ocorrências por doença
+  var ocorrenciasPorDoenca = {};
+  
+  // 2. Passa por todas as linhas (pulando o cabeçalho na linha 0)
+  for (var i = 1; i < values.length; i++) {
+    var label = values[i][COL_LABEL];
+    var dataOcorrencia = values[i][COL_DATE];
+    var fazenda = values[i][COL_FARM];
+    var talhao = values[i][COL_PLOT];
+    
+    // Ignora plantas saudáveis, erros ou linhas vazias
+    if (label && label !== "Healthy" && label !== "error" && label !== "") {
+      if (!ocorrenciasPorDoenca[label]) {
+        ocorrenciasPorDoenca[label] = [];
+      }
+      // Guarda os detalhes de onde e quando ocorreu
+      ocorrenciasPorDoenca[label].push({
+        data: dataOcorrencia,
+        fazenda: fazenda,
+        talhao: talhao
+      });
+    }
+  }
+  
+  // 3. Verifica quais doenças passaram do limite de 2 ocorrências
+  for (var doenca in ocorrenciasPorDoenca) {
+    var historico = ocorrenciasPorDoenca[doenca];
+    
+    if (historico.length > 2) {
+      // Monta o corpo do e-mail com os detalhes solicitados
+      var emailContato = ""; // ⚠️ SUBSTITUA PELO SEU E-MAIL
+      var assunto = "🚨 [AGROSMART] Alerta Crítico: Plano de Controle Requerido para " + doenca;
+      
+      var corpoEmail = "Prezada equipe de manejo,\n\n" +
+                       "O sistema de visão computacional detectou um volume crítico para a doença: *" + doenca + "*.\n" +
+                       "Foram registradas " + historico.length + " ocorrências. É necessário acionar o plano de controle imediatamente.\n\n" +
+                       "--- DETALHES DAS OCORRÊNCIAS ---\n";
+      
+      // Lista onde e quando ocorreram
+      for (var j = 0; j < historico.length; j++) {
+        corpoEmail += "- Data: " + historico[j].data + " | Fazenda: " + historico[j].fazenda + " | Talhão: " + historico[j].talhao + "\n";
+      }
+      
+      corpoEmail += "\nPor favor, verifique o painel do Google Looker Studio para mais detalhes.\n" +
+                    "E-mail gerado automaticamente pelo Sistema AgroSmart.";
+      
+      // Envia o e-mail
+      MailApp.sendEmail(emailContato, assunto, corpoEmail);
+      Logger.log("E-mail de alerta enviado para a doença: " + doenca);
+    }
+  }
+}

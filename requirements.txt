@@ -1,0 +1,9 @@
+torch
+torchvision
+opencv-python
+pillow
+numpy
+tqdm
+streamlit>=1.30.0
+pandas
+plotly

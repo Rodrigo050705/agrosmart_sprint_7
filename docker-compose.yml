@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  agrosmart-core:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agrosmart_app
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    volumes:
+      # Garante a persistência da base SQLite fora do ciclo de vida do contentor
+      - ./results.sqlite:/app/results.sqlite
+      # Garante a persistência das pastas de imagens processadas e de entrada
+      - ./annotated_images:/app/annotated_images
+      - ./input_images:/app/input_images
+      - ./dataset_teste:/app/dataset_teste
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_ENABLE_CORS=false
+      - STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false

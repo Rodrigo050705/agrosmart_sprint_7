@@ -1,0 +1,54 @@
+name: CI/CD Pipeline - AgroSmart Core
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  qualidade-e-seguranca:
+    name: Qualidade de Código & SAST
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Ambiente Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Instalar Ferramentas de Auditoria
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 bandit
+
+      - name: Linting com Flake8 (Qualidade e Sintaxe)
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=dataset_teste,annotated_images,input_images
+
+      - name: Análise de Segurança com Bandit (SAST)
+        run: |
+          bandit -r mvp/ app_dashboard.py -ll
+
+  build-e-vulnerabilidade-docker:
+    name: Build Docker & Trivy Scan
+    needs: qualidade-e-seguranca
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Build da Imagem Docker
+        run: |
+          docker build -t agrosmart-core:latest .
+
+      - name: Varredura de Vulnerabilidades na Imagem (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'agrosmart-core:latest'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
