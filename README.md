@@ -1,78 +1,193 @@
-# 🌽 AgroSmart Core — Monitoramento Fitossanitário Inteligente
+# 🌽 AgroSmart Core Hub
 
-Plataforma integrada de visão computacional e engenharia de dados voltada ao monitoramento em tempo real da saúde da cultura do milho. O sistema processa fluxos contínuos de imagens captadas em campo, realiza diagnósticos fitossanitários com explicabilidade visual via **Grad-CAM++**, armazena as inferências de forma relacional e automatiza alertas agronômicos por e-mail quando limiares críticos de infestação são atingidos.
-
----
-
-## 📌 Funcionalidades Principais
-
-* **Simulação Contínua de Sensores:** Emulação do envio de imagens de campo por dispositivos IoT/câmeras em intervalos ajustáveis, com sorteio de amostras e metadados contextuais (talhão, fazenda e data).
-* **Classificação Multiclasse com PyTorch:** Modelo convolucional **DenseNet121** pré-treinado para diferenciar folhas sadias (*Healthy*) de patologias como Ferrugem Comum (*Common Rust*), Mancha de Cercospora (*Gray Leaf Spot*) e Helmintosporiose do Milho (*Northern Leaf Blight*).
-* **Explicabilidade Visual (Grad-CAM++):** Destaque interpretável das regiões causadoras da doença sobre a folha através de mapas de calor e contornos adaptativos.
-* **Persistência Relacional com Deduplicação:** Banco de dados **SQLite** com validação de hash criptográfico **SHA-256** para evitar reprocessamento desnecessário.
-* **Painel Analítico e Temporal:** Métricas executivas consolidadas, distribuição geral de patologias e análise cronológica para identificação de sazonalidade e picos epidemiológicos.
-* **Alertas Automatizados via SMTP:** Gatilho com regras de negócio (> 2 focos por fazenda) e controle antispam por sessão para envio imediato de e-mails técnicos.
-* **Inspeção Visual & Exportação:** Galeria com filtros dinâmicos de imagens processadas e download dos relatórios tabulares em **CSV**.
+Sistema inteligente para monitoramento contínuo e diagnóstico fitossanitário em lavouras de milho. A solução integra modelos de visão computacional profunda com técnicas de explicabilidade visual, mineração de processos (*Process Mining*) para observabilidade do ciclo de vida dos dados, conteinerização resiliente e esteira automatizada de DevSecOps.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 📌 Visão Geral do Projeto
 
-* **Linguagem:** Python 3.10+
-* **Framework Web:** Streamlit
-* **Visão Computacional & Deep Learning:** PyTorch, Torchvision, Pillow (PIL), NumPy, OpenCV
-* **Explicabilidade (XAI):** Grad-CAM++
-* **Visualização de Dados:** Plotly Express, Pandas
-* **Banco de Dados:** SQLite3
-* **Comunicação & Mensageria:** `smtplib`, `email.mime`
-* **Virtualização (Opcional):** Docker / Docker Compose
+O **AgroSmart Core** processa imagens capturadas por sensores de campo, classifica a sanidade foliar e destaca visualmente as regiões patológicas em folhas infectadas. O sistema foi desenvolvido para operar de forma autônoma, registrando métricas em tempo real e auditando os gargalos de execução através de telemetria e mineração de processos.
+
+### Principais Funcionalidades
+
+* **Diagnóstico com Deep Learning:** Classificação de patologias em milho utilizando a arquitetura convolucional **DenseNet-121**.
+* **Explicabilidade Visual (Grad-CAM++):** Geração automática de mapas de calor e máscaras de segmentação sobrepondo as lesões ativas quando uma patologia é detectada.
+* **Deduplicação de Imagens:** Mecanismo criptográfico com **SHA-256** para evitar reprocessamento desnecessário de amostras idênticas.
+* **Mineração de Processos (Process Mining):** Extração de *Event Log* estruturado (padrão IEEE XES/CSV) mapeando etapas, latência e gargalos computacionais.
+* **Alertas Epidemiológicos Automatizados:** Notificações via SMTP quando um limite crítico de focos de infecção é atingido em determinado talhão.
+* **Painel Interativo Streamlit:** Dashboard com monitoramento temporal, galeria visual, exportação de dados em CSV e console de telemetria.
+
+---
+
+## 🛠️ Arquitetura e Tecnologias
+
+* **Linguagem:** Python 3.10
+* **Framework Web / UI:** Streamlit
+* **Visão Computacional & IA:** PyTorch, Torchvision, OpenCV, Pillow, Grad-CAM++
+* **Análise de Dados:** Pandas, NumPy, Plotly Express
+* **Persistência de Dados:** SQLite3
+* **Conteinerização:** Docker e Docker Compose
+* **Qualidade e Segurança (CI/CD):** GitHub Actions, Flake8, Bandit (SAST) e Trivy (Scanner de Vulnerabilidades de Contêiner)
 
 ---
 
 ## 📂 Estrutura de Diretórios
 
-```plaintext
-corn_predictions/
-├── app_dashboard.py            # Aplicação principal Streamlit
-├── docker-compose.yml          # Orquestração de contêineres Docker
-├── Dockerfile                  # Imagem base de execução
-├── requirements.txt            # Dependências do projeto
-├── results.sqlite              # Banco de dados local de inferências
-├── dataset_teste/              # Banco de imagens brutas de teste para simulação
-├── input_images/               # Fila ativa de processamento contínuo
-├── annotated_images/           # Imagens resultantes com máscaras Grad-CAM++
-├── models/
-│   ├── maize_densenet121_state_dict.pt  # Pesos treinados do modelo
-│   └── maize_densenet121_meta.json      # Metadados e índices das classes
-└── mvp/
-    ├── annotate.py             # Rotinas de desenho de anotações e contornos
-    ├── campp.py                # Implementação do Grad-CAM++
-    ├── db.py                   # Operações de inicialização e inserção no SQLite
-    ├── hashing.py              # Cálculo de hash SHA-256
-    ├── masking.py              # Segmentação e limiares de máscaras adaptativas
-    └── model.py                # Carregamento e inferência da DenseNet121
+```text
+├── .github/
+│   └── workflows/
+│       └── pipeline.yml          # Pipeline CI/CD (Linting, SAST, Build e Trivy)
+├── dataset_teste/                # Amostras para simulação contínua
+├── models/                       # Pesos e metadados da DenseNet-121
+│   ├── maize_densenet121_meta.json
+│   └── maize_densenet121_state_dict.pt
+├── mvp/                          # Módulos de visão computacional, hash e banco
+│   ├── annotate.py
+│   ├── campp.py
+│   ├── db.py
+│   ├── hashing.py
+│   ├── masking.py
+│   └── model.py
+├── app_dashboard.py              # Aplicação principal Streamlit
+├── docker-compose.yml            # Orquestração do contêiner e volumes
+├── Dockerfile                    # Receita da imagem do contêiner com healthcheck
+├── requirements.txt              # Dependências do projeto
+└── results.sqlite                # Base de dados relacional persistida
 
-## 🚀 Como Executar o Projeto (Via Arquivo .ZIP)
-
-### 1. Pré-requisitos
-* **Python 3.10 ou superior** instalado ([Download oficial do Python](https://www.python.org/downloads/)).
-  > ⚠️ Durante a instalação no Windows, lembre-se de marcar a opção **"Add Python to PATH"**.
+```
 
 ---
 
-### 2. Preparação do Ambiente
+## 🚀 Como Executar o Projeto com Docker (Recomendado)
 
-1. Extraia o conteúdo do arquivo `.zip` em uma pasta de sua preferência.
-2. Certifique-se de que a estrutura básica contém os seguintes diretórios:
-   * `models/`: contendo os pesos (`maize_densenet121_state_dict.pt`) e os metadados (`maize_densenet121_meta.json`).
-   * `dataset_teste/`: contendo as imagens de folhas de milho para teste da simulação.
-   * `mvp/`: contendo os scripts auxiliares do pipeline.
+### Pré-requisitos
+
+* [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e ativo.
+* [Git](https://git-scm.com/) configurado.
+
+### 1. Clonar o Repositório
+
+```bash
+git clone <URL_DO_REPOSITORIO>
+cd agrosmart-core
+
+```
+
+### 2. Inicializar o Arquivo de Banco de Dados
+
+Para evitar que o Docker monte o arquivo SQLite como um diretório no host Windows/Linux, crie o arquivo em branco antes de subir o serviço:
+
+* **PowerShell (Windows):**
+```powershell
+if (!(Test-Path "results.sqlite")) { New-Item -ItemType File -Name "results.sqlite" }
+
+```
+
+
+* **Linux / macOS:**
+```bash
+touch results.sqlite
+
+```
+
+
+
+### 3. Construir e Iniciar o Contêiner
+
+Execute a construção e a inicialização em segundo plano:
+
+```bash
+docker compose up --build -d
+
+```
+
+### 4. Verificar o Status e a Integridade (Healthcheck)
+
+Aguarde cerca de 30 segundos e confira se o serviço alcançou o status de integridade esperado:
+
+```bash
+docker compose ps
+
+```
+
+(O status deve exibir `Up` acompanhado de `(healthy)`).
+
+### 5. Acessar a Aplicação
+
+Abra no navegador:
+
+```text
+http://localhost:8501
+
+```
 
 ---
 
-### 3. Instalação das Dependências e execução
+## 🧪 Roteiro de Testes e Validação Funcional
 
-Abra o terminal o projeto dentro da pasta descompactada e execute:
+### 1. Teste da Simulação Contínua
 
-pip install -r requirements.txt
-python -m streamlit run app_dashboard.py
+1. Acesse o menu lateral do dashboard.
+2. Na seção **Simulação de Sensores**, clique no botão **▶ Ligar**.
+3. O sistema passará a simular o envio contínuo de amostras do diretório `dataset_teste/`.
+4. Navegue pela aba **Painel Analítico & Temporal** para acompanhar os gráficos de sazonalidade e índices de sanidade sendo alimentados em tempo real.
+
+### 2. Teste da Mineração de Processos (Process Mining)
+
+1. Com a simulação ativa por alguns ciclos, clique na aba **🔍 Mineração de Processos**.
+2. Avalie as métricas operacionais consolidadas:
+* **Casos Processados:** Volume de amostras auditadas.
+* **Descoberta de Gargalos:** O gráfico horizontal evidenciará o tempo despendido em cada microetapa (destaque para a latência da explicabilidade Grad-CAM++ vs. deduplicação de hash).
+* **Variantes de Processo:** Tabela de rotas percorridas pelas amostras (*happy path* com Grad-CAM++, *fast path* de folhas sadias e amostras descartadas por deduplicação).
+
+
+3. Clique em **📥 Baixar Event Log Estruturado (CSV)** para obter a base pronta para ferramentas de processo (Celonis, Disco, ProM, pm4py).
+
+### 3. Teste da Galeria de Explicabilidade
+
+1. Acesse a aba **Galeria Visual (Grad-CAM++)**.
+2. Filtre por diagnóstico e fazenda para inspecionar os mapas de atenção gerados pelo modelo sobre as folhas infectadas.
+
+---
+
+## 🔒 Testes Locais de Qualidade e Segurança (DevSecOps)
+
+Caso queira validar as etapas de auditoria localmente antes de enviar commits:
+
+### 1. Linting e Validação Sintática (Flake8)
+
+```powershell
+python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=dataset_teste,annotated_images,input_images
+
+```
+
+(A saída esperada é `0` erros).
+
+### 2. Auditoria Estática de Segurança (Bandit - SAST)
+
+```powershell
+python -m bandit -r mvp/ app_dashboard.py -ll --exit-zero
+
+```
+
+(Inspeciona potenciais brechas de segurança no código-fonte).
+
+### 3. Análise de Vulnerabilidades em Contêineres (Trivy)
+
+```powershell
+docker run --rm -v //var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image agrosmart-core:latest
+
+```
+
+(Gera o relatório com inventário de pacotes e CVEs identificadas no contêiner).
+
+---
+
+## ⚙️ Esteira de CI/CD (GitHub Actions)
+
+A cada `push` ou `pull request` na branch `main`, o workflow `.github/workflows/pipeline.yml` dispara automaticamente:
+
+1. **Job 1 (Qualidade & SAST):** Validação de sintaxe com **Flake8** e análise de riscos com **Bandit**.
+
+
+2. **Job 2 (Build & Trivy Scan):** Compilação automatizada da imagem Docker e varredura de vulnerabilidades de contêiner com **Trivy**.
